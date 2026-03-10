@@ -102,8 +102,12 @@ export default function DevisClientPDF({ chiffrage, projetNom, client, descripti
     ? matiereVenteTotal / totalMatiereEtFournitures
     : 1;
 
-  const fmt = (montant: number) =>
-    `${(Math.round(montant * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  const fmt = (montant: number) => {
+    const val = (Math.round(montant * 100) / 100).toFixed(2);
+    const [entier, decimales] = val.split('.');
+    const avecMilliers = (entier ?? '').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `${avecMilliers},${decimales} €`;
+  };
 
   // Lignes du devis
   const lignes: { designation: string; detail: string; quantite: string; pu: string; total: string }[] = [];
