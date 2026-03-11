@@ -1,8 +1,8 @@
 import type { OeilletConfig, Point2D } from '../types';
 
-const DIAMETRE_DEFAUT = 16;     // mm
-const ESPACEMENT_DEFAUT = 300;  // mm
-const RETRAIT_DEFAUT = 25;      // mm
+export const DIAMETRE_DEFAUT = 16;     // mm
+export const ESPACEMENT_DEFAUT = 300;  // mm
+export const RETRAIT_DEFAUT = 150;     // mm — distance minimale réaliste au coin
 
 /** Valeurs par défaut pour une config œillet */
 export function defaultOeilletConfig(): OeilletConfig {
@@ -29,7 +29,9 @@ export function calculerPositionsOeillets(
 ): Point2D[] {
   if (!config.actif || vertices_2d.length < 2) return [];
 
-  const { espacement_mm, retrait_bord_mm } = config;
+  // Appliquer les valeurs par défaut — retrait 0 ou undefined → valeur réaliste
+  const espacement = config.espacement_mm > 0 ? config.espacement_mm : ESPACEMENT_DEFAUT;
+  const retrait = config.retrait_bord_mm > 0 ? config.retrait_bord_mm : RETRAIT_DEFAUT;
   const positions: Point2D[] = [];
   const n = vertices_2d.length;
 
@@ -42,17 +44,17 @@ export function calculerPositionsOeillets(
     const len = Math.sqrt(dx * dx + dy * dy);
 
     // Arête trop courte pour placer même un seul œillet avec le retrait
-    if (len <= 2 * retrait_bord_mm) continue;
+    if (len <= 2 * retrait) continue;
 
     const ux = dx / len;
     const uy = dy / len;
 
-    const start = retrait_bord_mm;
-    const end = len - retrait_bord_mm;
-    const count = Math.floor((end - start) / espacement_mm) + 1;
+    const start = retrait;
+    const end = len - retrait;
+    const count = Math.floor((end - start) / espacement) + 1;
 
     for (let j = 0; j < count; j++) {
-      const t = start + j * Math.min(espacement_mm, end - start); // dernier pas adapté
+      const t = start + j * espacement;
       if (t <= end + 0.01) {
         positions.push([a[0] + ux * t, a[1] + uy * t]);
       }

@@ -148,7 +148,11 @@ export function OeilletConfigField({ value, onChange, nbOeillets }: OeilletConfi
               type="number"
               inputMode="numeric"
               value={config.retrait_bord_mm || ""}
-              onChange={(e) => onChange({ ...config, retrait_bord_mm: Number(e.target.value) })}
+              placeholder="150"
+              onChange={(e) => {
+                const val = Number(e.target.value);
+                onChange({ ...config, retrait_bord_mm: val > 0 ? val : 150 });
+              }}
               className="h-9"
             />
           </div>
