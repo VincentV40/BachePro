@@ -9,7 +9,7 @@ import type { Mesh3D, Point3D, TenteDeuxPansParams } from '../types';
  * Le rampant est la longueur de chaque pente (du haut du mur au faîtage).
  */
 export function genererMeshTenteDeuxPans(params: TenteDeuxPansParams): Mesh3D {
-  const { largeur_base_mm, profondeur_mm, rampant_gauche_mm, rampant_droit_mm, hauteur_murs_mm } = params;
+  const { largeur_base_mm, profondeur_mm, rampant_gauche_mm, rampant_droit_mm, hauteur_murs_mm, pignon_avant, pignon_arriere } = params;
 
   const demi_largeur = largeur_base_mm / 2;
 
@@ -51,19 +51,13 @@ export function genererMeshTenteDeuxPans(params: TenteDeuxPansParams): Mesh3D {
   ];
 
   const faces = [
-    // Versant (la bâche passe par-dessus le faîtage = une seule face conceptuelle,
-    // mais géométriquement c'est 2 faces triangulaires par pente)
     // Versant gauche : quad 7-4-8-9
     { indices: [7, 4, 8, 9], nom: 'versant-gauche' },
     // Versant droit : quad 5-6-9-8
     { indices: [5, 6, 9, 8], nom: 'versant-droit' },
-    // Pignon avant : pentagone 4-5-8 (triangle au-dessus des murs)
-    // + rectangle 0-1-5-4 (murs, mais pas couvert par la bâche pignon)
-    // Pour la bâche, le pignon = le pentagone 0-1-5-8-4 ou juste le triangle 4-5-8
-    // En fait le pignon bâche couvre toute la face : du sol au faîtage
-    { indices: [4, 5, 8], nom: 'pignon-avant' },
-    // Pignon arrière : triangle 7-9-6
-    { indices: [7, 9, 6], nom: 'pignon-arriere' },
+    // Pignons — inclus seulement si activés
+    ...(pignon_avant ? [{ indices: [4, 5, 8], nom: 'pignon-avant' }] : []),
+    ...(pignon_arriere ? [{ indices: [7, 9, 6], nom: 'pignon-arriere' }] : []),
   ];
 
   return { vertices, faces };

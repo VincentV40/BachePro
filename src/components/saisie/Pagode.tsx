@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import type { PagodeParams, OptionsPatronage } from "@/engine/types";
+import type { PagodeParams, OeilletConfig, OptionsPatronage } from "@/engine/types";
 import { genererPanneaux } from "@/engine/typologies/pagode";
 import { useProjetStore } from "@/stores/projet-store";
 import { useTissusStore } from "@/stores/tissus-store";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { OeilletConfigField } from "./OptionsCommunes";
 import { arrondirML } from "@/lib/constants";
-import { Ruler, Layers, BarChart3, Euro } from "lucide-react";
+import { Ruler, Layers, BarChart3, Euro, Circle } from "lucide-react";
 
 interface Props { projetId: string; }
 
@@ -87,6 +88,23 @@ export default function Pagode({ projetId }: Props) {
               <DimensionField label="Hauteur bords" value={params.hauteur_bords_mm} onChange={(v) => setParam("hauteur_bords_mm", v)} />
               <DimensionField label="Rampant (longueur pente)" value={params.rampant_mm} onChange={(v) => setParam("rampant_mm", v)} />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Œillets */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Circle className="w-4 h-4 text-primary" />
+              Œillets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OeilletConfigField
+              value={(params as { oeillets_config?: OeilletConfig }).oeillets_config}
+              onChange={(v) => updateParams(projetId, { ...params, oeillets_config: v })}
+              nbOeillets={resultat?.nb_oeillets}
+            />
           </CardContent>
         </Card>
 

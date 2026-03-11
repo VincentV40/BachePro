@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import type { TunnelParams, OptionsPatronage } from "@/engine/types";
+import type { TunnelParams, OeilletConfig, OptionsPatronage } from "@/engine/types";
 import { genererPanneaux } from "@/engine/typologies/tunnel";
 import { useProjetStore } from "@/stores/projet-store";
 import { useTissusStore } from "@/stores/tissus-store";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { OeilletConfigField } from "./OptionsCommunes";
 import { arrondirML } from "@/lib/constants";
-import { Ruler, Layers, BarChart3, Euro } from "lucide-react";
+import { Ruler, Layers, BarChart3, Euro, Circle } from "lucide-react";
 
 interface Props { projetId: string; }
 
@@ -86,6 +87,23 @@ export default function Tunnel({ projetId }: Props) {
               <DimensionField label="Hauteur au sommet" value={params.hauteur_mm} onChange={(v) => setParam("hauteur_mm", v)} />
               <DimensionField label="Nombre de facettes" value={params.nb_facettes} onChange={(v) => setParam("nb_facettes", v)} suffix="" />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Œillets */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Circle className="w-4 h-4 text-primary" />
+              Œillets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OeilletConfigField
+              value={(params as { oeillets_config?: OeilletConfig }).oeillets_config}
+              onChange={(v) => updateParams(projetId, { ...params, oeillets_config: v })}
+              nbOeillets={resultat?.nb_oeillets}
+            />
           </CardContent>
         </Card>
 

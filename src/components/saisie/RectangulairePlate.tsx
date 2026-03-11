@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import type { RectangulairePlateParams, OptionsPatronage } from "@/engine/types";
+import type { RectangulairePlateParams, OeilletConfig, OptionsPatronage } from "@/engine/types";
 import { genererPanneaux } from "@/engine/typologies/rectangulaire-plate";
 import { useProjetStore } from "@/stores/projet-store";
 import { useTissusStore } from "@/stores/tissus-store";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { OeilletConfigField } from "./OptionsCommunes";
 import { arrondirML } from "@/lib/constants";
-import { Ruler, Layers, BarChart3, Euro } from "lucide-react";
+import { Ruler, Layers, BarChart3, Euro, Circle } from "lucide-react";
 
 interface Props { projetId: string; }
 
@@ -84,6 +85,23 @@ export default function RectangulairePlate({ projetId }: Props) {
               <DimensionField label="Largeur" value={params.largeur_mm} onChange={(v) => setParam("largeur_mm", v)} />
               <DimensionField label="Profondeur" value={params.profondeur_mm} onChange={(v) => setParam("profondeur_mm", v)} />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Œillets */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Circle className="w-4 h-4 text-primary" />
+              Œillets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OeilletConfigField
+              value={(params as { oeillets_config?: OeilletConfig }).oeillets_config}
+              onChange={(v) => updateParams(projetId, { ...params, oeillets_config: v })}
+              nbOeillets={resultat?.nb_oeillets}
+            />
           </CardContent>
         </Card>
 

@@ -16,12 +16,11 @@ export default function BacheMesh({ mesh }: Props) {
     const positions: number[] = [];
     const indices: number[] = [];
 
-    // Copier les vertices
     for (const v of mesh.vertices) {
       positions.push(v[0], v[1], v[2]);
     }
 
-    // Trianguler les faces (fan triangulation pour polygones convexes)
+    // Fan triangulation pour polygones convexes
     for (const face of mesh.faces) {
       const idx = face.indices;
       const first = idx[0];
@@ -42,24 +41,24 @@ export default function BacheMesh({ mesh }: Props) {
     return geo;
   }, [mesh]);
 
+  // Arêtes nettes sans triangulation visible (seuil 20°)
+  const edgesGeometry = useMemo(() => new THREE.EdgesGeometry(geometry, 20), [geometry]);
+
   return (
     <group>
+      {/* Surface bâche */}
       <mesh geometry={geometry}>
         <meshStandardMaterial
-          color="#e8d8b8"
+          color="#D4C5A9"
+          opacity={0.85}
           transparent
-          opacity={0.7}
           side={THREE.DoubleSide}
         />
       </mesh>
-      <mesh geometry={geometry}>
-        <meshBasicMaterial
-          color="#000000"
-          wireframe
-          transparent
-          opacity={0.3}
-        />
-      </mesh>
+      {/* Arêtes structurelles uniquement */}
+      <lineSegments geometry={edgesGeometry}>
+        <lineBasicMaterial color="#1E40AF" />
+      </lineSegments>
     </group>
   );
 }

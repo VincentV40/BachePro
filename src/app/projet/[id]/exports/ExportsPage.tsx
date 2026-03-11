@@ -4,6 +4,7 @@ import { useState } from "react";
 import { pdf } from "@react-pdf/renderer";
 import { useProjetStore } from "@/stores/projet-store";
 import { useTissusStore } from "@/stores/tissus-store";
+import { useParametresStore } from "@/stores/parametres-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileDown } from "lucide-react";
@@ -18,6 +19,7 @@ interface Props {
 export default function ExportsPage({ projetId }: Props) {
   const { projets } = useProjetStore();
   const { tissus } = useTissusStore();
+  const { entreprise } = useParametresStore();
   const projet = projets.find((p) => p.id === projetId);
   const tissu = tissus.find((t) => t.id === projet?.tissu_id);
   const [loading, setLoading] = useState<string | null>(null);
@@ -49,14 +51,18 @@ export default function ExportsPage({ projetId }: Props) {
   const exports = [
     {
       name: "plan_de_coupe",
-      label: "Plan de coupe",
-      description: "Panneaux, bandes, dimensions et ML par laize",
+      label: "Plan de coupe (A3)",
+      description: "Vue isométrique, panneaux dépliés, cartouche atelier",
       doc: (
         <PlanDeCoupePDF
           resultat={projet.resultat}
           tissu={tissu}
           projetNom={projet.nom}
           client={projet.client}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          params={projet.params as any}
+          typologie={projet.typologie}
+          entreprise={entreprise}
         />
       ),
     },
@@ -70,6 +76,7 @@ export default function ExportsPage({ projetId }: Props) {
           tissu={tissu}
           projetNom={projet.nom}
           client={projet.client}
+          entreprise={entreprise}
         />
       ),
     },
@@ -87,6 +94,7 @@ export default function ExportsPage({ projetId }: Props) {
                 resultat={projet.resultat}
                 tissu={tissu}
                 typologie={projet.typologie}
+                entreprise={entreprise}
               />
             ),
           },

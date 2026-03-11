@@ -11,9 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { LambrequinField } from "./OptionsCommunes";
+import { LambrequinField, OeilletConfigField } from "./OptionsCommunes";
 import { arrondirML } from "@/lib/constants";
-import { Ruler, Layers, BarChart3, Euro } from "lucide-react";
+import { Ruler, Layers, BarChart3, Euro, Settings2, Circle } from "lucide-react";
 
 interface Props {
   projetId: string;
@@ -52,7 +52,7 @@ function DimensionField({
 export default function TenteDeuxPans({ projetId }: Props) {
   const { projets, updateParams, updateTissu, updateResultat, updateProjet } = useProjetStore();
   const { tissus } = useTissusStore();
-  const { ourlet_mm, recouvrement_mm } = useParametresStore();
+  const { ourlet_mm, recouvrement_mm, marge_coupe_mm, setParametre } = useParametresStore();
 
   const projet = projets.find((p) => p.id === projetId);
   const params = projet?.params as TenteDeuxPansParams | undefined;
@@ -60,7 +60,7 @@ export default function TenteDeuxPans({ projetId }: Props) {
 
   const resultat = useMemo(() => {
     if (!params || !tissu) return null;
-    const options: OptionsPatronage = { laize_mm: tissu.laize_mm, ourlet_mm, recouvrement_mm };
+    const options: OptionsPatronage = { laize_mm: tissu.laize_mm, ourlet_mm, recouvrement_mm, marge_coupe_mm };
     try {
       return genererPanneaux(params, options);
     } catch {
@@ -168,15 +168,42 @@ export default function TenteDeuxPans({ projetId }: Props) {
                 label="Gauche"
                 value={params.lambrequin_gauche}
                 onChange={(v) => setParam("lambrequin_gauche", v)}
+                pignonContext={{
+                  largeur_base_mm: params.largeur_base_mm,
+                  rampant_mm: Math.max(params.rampant_gauche_mm, params.rampant_droit_mm),
+                  hauteur_murs_mm: params.hauteur_murs_mm,
+                }}
               />
               <LambrequinField
                 label="Droit"
                 value={params.lambrequin_droit}
                 onChange={(v) => setParam("lambrequin_droit", v)}
+                pignonContext={{
+                  largeur_base_mm: params.largeur_base_mm,
+                  rampant_mm: Math.max(params.rampant_gauche_mm, params.rampant_droit_mm),
+                  hauteur_murs_mm: params.hauteur_murs_mm,
+                }}
               />
             </CardContent>
           </Card>
         </div>
+
+        {/* Œillets */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Circle className="w-4 h-4 text-primary" />
+              Œillets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OeilletConfigField
+              value={params.oeillets_config}
+              onChange={(v) => setParam("oeillets_config", v)}
+              nbOeillets={resultat?.nb_oeillets}
+            />
+          </CardContent>
+        </Card>
 
         {/* Tissu */}
         <Card className="shadow-sm">
@@ -208,6 +235,71 @@ export default function TenteDeuxPans({ projetId }: Props) {
                   <Badge variant="secondary" className="text-xs">Garantie {tissu.garantie_ans} ans</Badge>
                 )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Options confection */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Settings2 className="w-4 h-4 text-primary" />
+              Options confection
+              <span className="text-xs font-normal text-muted-foreground ml-auto">Paramètres globaux</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Ourlet (mm)</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    value={ourlet_mm}
+                    onChange={(e) => setParametre("ourlet_mm", Number(e.target.value))}
+                    className="h-9 pr-8 text-sm"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">mm</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Ourlet par bout de bande</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Recouvrement (mm)</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    value={recouvrement_mm}
+                    onChange={(e) => setParametre("recouvrement_mm", Number(e.target.value))}
+                    className="h-9 pr-8 text-sm"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">mm</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Chevauchement soudure</p>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1 block">Marge coupe (mm)</Label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    value={marge_coupe_mm}
+                    onChange={(e) => setParametre("marge_coupe_mm", Number(e.target.value))}
+                    className="h-9 pr-8 text-sm"
+                  />
+                  <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">mm</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Marge de sécurité par bout</p>
+              </div>
+            </div>
+            {tissu && params.profondeur_mm > 0 && (
+              <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+                Longueur bande versant = {(params.profondeur_mm / 1000).toFixed(2)}m profondeur
+                {" + "}{(2 * ourlet_mm / 1000).toFixed(2)}m ourlets
+                {" + "}{(2 * marge_coupe_mm / 1000).toFixed(2)}m marges coupe
+                {" = "}<strong>{((params.profondeur_mm + 2 * ourlet_mm + 2 * marge_coupe_mm) / 1000).toFixed(2)}m</strong>
+              </p>
             )}
           </CardContent>
         </Card>
@@ -270,6 +362,17 @@ export default function TenteDeuxPans({ projetId }: Props) {
                     </div>
                   </div>
                 )}
+                {resultat.nb_oeillets !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center">
+                      <Circle className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Œillets</p>
+                      <p className="font-semibold text-sm">{resultat.nb_oeillets}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Separator className="my-4" />
@@ -289,6 +392,29 @@ export default function TenteDeuxPans({ projetId }: Props) {
                   );
                 })}
               </div>
+
+              {resultat.lambrequins && resultat.lambrequins.length > 0 && (
+                <>
+                  <Separator className="my-3" />
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lambrequins</p>
+                    {resultat.lambrequins.map((lam) => (
+                      <div key={lam.id} className="flex items-center justify-between text-sm py-0.5">
+                        <span className="text-muted-foreground">{lam.nom}</span>
+                        {lam.pris_en_chute ? (
+                          <span className="text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded px-2 py-0.5">
+                            Chute — 0 ML
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium text-orange-700 bg-orange-50 border border-orange-200 rounded px-2 py-0.5">
+                            +{lam.ml_dedie} ML
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </CardContent>
           )}
 

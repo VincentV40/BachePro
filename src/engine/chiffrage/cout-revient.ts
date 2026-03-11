@@ -72,9 +72,10 @@ export function calculerChiffrage(
   // Coût de revient
   const cout_revient_ht = Math.round((cout_direct + overhead_montant) * 100) / 100;
 
-  // Marge et prix de vente
+  // Marge et prix de vente — coefficient multiplicateur : PV = CR × (1 + marge%)
+  // 0% = au coût, 35% = ×1.35, 100% = ×2 (valeurs raisonnables jusqu'à 100%)
   const marge_pct = options.marge_pct ?? MARGE_DEFAUT_PCT;
-  const prix_vente_ht = Math.round(cout_revient_ht / (1 - marge_pct / 100) * 100) / 100;
+  const prix_vente_ht = Math.round(cout_revient_ht * (1 + marge_pct / 100) * 100) / 100;
 
   // TVA
   const tva_taux = options.tva_taux ?? TVA_TAUX;
@@ -103,6 +104,7 @@ export function calculerChiffrage(
     cout_revient_ht,
     marge_pct,
     prix_vente_ht,
+    remise_commerciale_ht: 0,
     tva_taux,
     prix_vente_ttc,
   };

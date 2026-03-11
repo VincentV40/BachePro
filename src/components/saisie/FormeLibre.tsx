@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { FormeLibreParams, OptionsPatronage, Point2D } from "@/engine/types";
+import type { FormeLibreParams, OeilletConfig, OptionsPatronage, Point2D } from "@/engine/types";
 import { genererPanneaux } from "@/engine/typologies/forme-libre";
 import { useProjetStore } from "@/stores/projet-store";
 import { useTissusStore } from "@/stores/tissus-store";
@@ -12,8 +12,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { OeilletConfigField } from "./OptionsCommunes";
 import { arrondirML } from "@/lib/constants";
-import { Ruler, Layers, BarChart3, Euro, Plus, Trash2 } from "lucide-react";
+import { Ruler, Layers, BarChart3, Euro, Plus, Trash2, Circle } from "lucide-react";
 
 interface Props { projetId: string; }
 
@@ -122,6 +123,23 @@ export default function FormeLibre({ projetId }: Props) {
                 </svg>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Œillets */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Circle className="w-4 h-4 text-primary" />
+              Œillets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OeilletConfigField
+              value={(params as { oeillets_config?: OeilletConfig }).oeillets_config}
+              onChange={(v) => updateParams(projetId, { ...params, oeillets_config: v })}
+              nbOeillets={resultat?.nb_oeillets}
+            />
           </CardContent>
         </Card>
 

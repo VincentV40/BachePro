@@ -9,6 +9,9 @@ export const OURLET_MM = 100;
 /** Recouvrement entre deux bandes pour soudure haute fréquence, en mm */
 export const RECOUVREMENT_MM = 40;
 
+/** Marge de coupe par extrémité de bande, en mm (marge de sécurité pour la découpe) */
+export const MARGE_COUPE_MM = 50;
+
 /** Arrondi du métrage linéaire : au décimètre supérieur (100mm = 0.1 ML) */
 export const ARRONDI_ML_MM = 100;
 

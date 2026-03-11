@@ -9,6 +9,7 @@ import type {
 import { decouperRectangle } from '../geometry/slicing';
 import { calculerNesting } from '../geometry/nesting';
 import { mm2versM2 } from '../geometry/flatten';
+import { compterOeilletsTotaux } from '../geometry/oeillets';
 
 /**
  * Pagode : structure a 4 pans avec un sommet central plus eleve.
@@ -85,6 +86,9 @@ export function genererPanneaux(
 
   const nesting = calculerNesting(panneaux, laize_mm);
   const surface_totale_m2 = panneaux.reduce((acc, p) => acc + p.surface_m2, 0);
+  const nb_oeillets = params.oeillets_config
+    ? compterOeilletsTotaux(panneaux, params.oeillets_config)
+    : undefined;
 
   return {
     panneaux,
@@ -92,5 +96,6 @@ export function genererPanneaux(
     nombre_laizes: nesting.nombre_laizes,
     taux_chute_pct: nesting.taux_chute_pct,
     surface_totale_m2: Math.round(surface_totale_m2 * 100) / 100,
+    nb_oeillets,
   };
 }

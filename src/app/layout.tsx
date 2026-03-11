@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
+import { Settings, Library } from "lucide-react";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,6 +41,23 @@ export default function RootLayout({
               </div>
             </div>
           </div>
+          <nav className="flex items-center gap-1">
+            <Link
+              href="/tissus"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md hover:bg-muted transition-colors text-sm text-muted-foreground hover:text-foreground"
+              title="Bibliothèque tissus"
+            >
+              <Library className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Tissus</span>
+            </Link>
+            <Link
+              href="/settings"
+              className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+              title="Paramètres"
+            >
+              <Settings className="w-4 h-4" />
+            </Link>
+          </nav>
         </header>
         <main className="min-h-[calc(100vh-57px)]">
           {children}

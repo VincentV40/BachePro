@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Grid } from "@react-three/drei";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import type { TypologieBache, Projet, Mesh3D } from "@/engine/types";
 import { genererGeometrie as geoTenteDeuxPans } from "@/engine/typologies/tente-deux-pans";
 import { genererGeometrie as geoMonoPente } from "@/engine/typologies/mono-pente";
@@ -14,6 +15,8 @@ import { genererGeometrie as geoLateraleDroite } from "@/engine/typologies/later
 import { genererGeometrie as geoFormeLibre } from "@/engine/typologies/forme-libre";
 import BacheMesh from "./BacheMesh";
 import Cotation3D from "./Cotation3D";
+import OeilletsMesh3D from "./OeilletsMesh3D";
+import type { OeilletConfig } from "@/engine/types";
 
 interface Props {
   typologie: TypologieBache;
@@ -47,9 +50,10 @@ function genererMesh(typologie: TypologieBache, params: Projet["params"]): Mesh3
 }
 
 export default function BacheScene({ typologie, params }: Props) {
+  const controlsRef = useRef<OrbitControlsImpl>(null);
+
   const mesh = useMemo(() => genererMesh(typologie, params), [typologie, params]);
 
-  // Calculer la taille max pour la camera a partir des vertices
   const maxDim = useMemo(() => {
     if (!mesh || mesh.vertices.length === 0) return 10000;
     let max = 0;
@@ -61,43 +65,66 @@ export default function BacheScene({ typologie, params }: Props) {
 
   const cameraDistance = maxDim * 1.5;
 
+  const handleReset = useCallback(() => {
+    controlsRef.current?.reset();
+  }, []);
+
   return (
-    <Canvas
-      camera={{
-        position: [cameraDistance * 0.6, cameraDistance * 0.4, cameraDistance * 0.6],
-        fov: 50,
-        near: 10,
-        far: maxDim * 10,
-      }}
-      className="bg-gray-50"
-    >
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[1, 2, 1]} intensity={0.8} />
+    <div className="relative w-full h-full">
+      <Canvas
+        camera={{
+          position: [cameraDistance * 0.6, cameraDistance * 0.4, cameraDistance * 0.6],
+          fov: 50,
+          near: 10,
+          far: maxDim * 10,
+        }}
+        onCreated={({ gl }) => {
+          gl.setClearColor("#F5F5F5");
+        }}
+      >
+        <ambientLight intensity={0.6} />
+        <directionalLight position={[1, 2, 1]} intensity={0.8} />
 
-      {mesh && (
-        <>
-          <BacheMesh mesh={mesh} />
-          <Cotation3D mesh={mesh} />
-        </>
-      )}
+        {mesh && (
+          <>
+            <BacheMesh mesh={mesh} />
+            <Cotation3D mesh={mesh} />
+            {(params as { oeillets_config?: OeilletConfig }).oeillets_config?.actif && (
+              <OeilletsMesh3D
+                mesh={mesh}
+                config={(params as { oeillets_config: OeilletConfig }).oeillets_config}
+              />
+            )}
+          </>
+        )}
 
-      <Grid
-        args={[maxDim * 3, maxDim * 3]}
-        cellSize={500}
-        sectionSize={1000}
-        fadeDistance={maxDim * 3}
-        cellColor="#d4d4d8"
-        sectionColor="#a1a1aa"
-      />
+        <Grid
+          args={[maxDim * 3, maxDim * 3]}
+          cellSize={500}
+          sectionSize={1000}
+          fadeDistance={maxDim * 3}
+          cellColor="#d4d4d8"
+          sectionColor="#a1a1aa"
+        />
 
-      <OrbitControls
-        makeDefault
-        enableDamping
-        dampingFactor={0.1}
-        minDistance={maxDim * 0.3}
-        maxDistance={maxDim * 5}
-      />
+        <OrbitControls
+          ref={controlsRef}
+          makeDefault
+          enableDamping
+          dampingFactor={0.1}
+          minDistance={maxDim * 0.3}
+          maxDistance={maxDim * 5}
+        />
+      </Canvas>
 
-    </Canvas>
+      {/* Bouton reset vue — overlay HTML */}
+      <button
+        onClick={handleReset}
+        className="absolute bottom-3 right-3 px-2.5 py-1.5 text-xs font-medium bg-white/90 hover:bg-white border border-gray-200 rounded shadow-sm text-gray-600 hover:text-gray-900 transition-colors"
+        title="Réinitialiser la vue"
+      >
+        Reset vue
+      </button>
+    </div>
   );
 }

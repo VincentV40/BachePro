@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import type {
   TenteDeuxPansParams,
   Mesh3D,
@@ -8,9 +7,10 @@ import type {
 } from '../types';
 import { genererMeshTenteDeuxPans } from '../geometry/mesh';
 import { deplierVersant, deplierPignon } from '../geometry/flatten';
-import { decouperRectangle, decouperPolygone } from '../geometry/slicing';
+import { decouperRectangle } from '../geometry/slicing';
 import { calculerNesting } from '../geometry/nesting';
-import { OURLET_MM, RECOUVREMENT_MM } from '@/lib/constants';
+import { calculerLambrequins } from '../geometry/lambrequins';
+import { compterOeilletsTotaux } from '../geometry/oeillets';
 
 /**
  * Génère la géométrie 3D d'une tente deux pans.
@@ -48,6 +48,7 @@ export function genererPanneaux(
   } = params;
 
   const { laize_mm, ourlet_mm, recouvrement_mm } = options;
+  const marge_coupe_mm = options.marge_coupe_mm ?? 0;
 
   const panneaux: Panneau[] = [];
 
@@ -67,8 +68,8 @@ export function genererPanneaux(
     profondeur_mm,
   );
 
-  // Longueur de chaque bande = profondeur + ourlets aux deux bouts
-  const longueur_bande_versant = profondeur_mm + 2 * ourlet_mm;
+  // Longueur de chaque bande = profondeur + ourlets + marges de coupe (aux deux bouts)
+  const longueur_bande_versant = profondeur_mm + 2 * ourlet_mm + 2 * marge_coupe_mm;
 
   // Découper le développé en laizes
   const bandes_versant = decouperRectangle(
@@ -79,12 +80,20 @@ export function genererPanneaux(
     recouvrement_mm,
   );
 
+  // Formule décomposée pour affichage atelier
+  const composants_versant: number[] = [];
+  if (retombee_gauche > 0) composants_versant.push(retombee_gauche);
+  composants_versant.push(rampant_gauche_mm, rampant_droit_mm);
+  if (retombee_droite > 0) composants_versant.push(retombee_droite);
+  const formule_versant = `(${composants_versant.join(' + ')}) = ${versantDeplie.developpe_mm} mm développé`;
+
   const versantPanel: Panneau = {
     id: 'versant',
     nom: 'Versant',
     vertices_2d: versantDeplie.vertices_2d,
     surface_m2: versantDeplie.surface_m2,
     bandes: bandes_versant,
+    formule_calcul: formule_versant,
   };
   panneaux.push(versantPanel);
 
@@ -99,12 +108,12 @@ export function genererPanneaux(
     );
 
     // Pour les pignons, les bandes sont verticales (laize couvre la largeur)
-    // Longueur de chaque bande = rampant (hauteur de coupe)
-    // Pas d'ourlet ajouté à la longueur pignon (la découpe en forme fournit la marge)
+    // Longueur = rampant + marges de coupe (ourlet non ajouté : la découpe en forme fournit la marge)
+    const longueur_bande_pignon_av = pignonAvDeplie.hauteur_coupe_mm + 2 * marge_coupe_mm;
     const bandes_pignon_av = decouperRectangle(
       'pignon-avant',
       largeur_base_mm,
-      pignonAvDeplie.hauteur_coupe_mm,
+      longueur_bande_pignon_av,
       laize_mm,
       recouvrement_mm,
     );
@@ -115,6 +124,7 @@ export function genererPanneaux(
       vertices_2d: pignonAvDeplie.vertices_2d,
       surface_m2: pignonAvDeplie.surface_m2,
       bandes: bandes_pignon_av,
+      formule_calcul: `Larg. ${largeur_base_mm} mm — bandes verticales h=${Math.max(rampant_gauche_mm, rampant_droit_mm)} mm`,
     };
     panneaux.push(pignonAvPanel);
   }
@@ -129,10 +139,11 @@ export function genererPanneaux(
       Math.max(rampant_gauche_mm, rampant_droit_mm),
     );
 
+    const longueur_bande_pignon_ar = pignonArDeplie.hauteur_coupe_mm + 2 * marge_coupe_mm;
     const bandes_pignon_ar = decouperRectangle(
       'pignon-arriere',
       largeur_base_mm,
-      pignonArDeplie.hauteur_coupe_mm,
+      longueur_bande_pignon_ar,
       laize_mm,
       recouvrement_mm,
     );
@@ -143,12 +154,36 @@ export function genererPanneaux(
       vertices_2d: pignonArDeplie.vertices_2d,
       surface_m2: pignonArDeplie.surface_m2,
       bandes: bandes_pignon_ar,
+      formule_calcul: `Larg. ${largeur_base_mm} mm — bandes verticales h=${Math.max(rampant_gauche_mm, rampant_droit_mm)} mm`,
     };
     panneaux.push(pignonArPanel);
   }
 
   // ================================================================
-  // 4. CALCUL NESTING ET TOTAUX
+  // 4. LAMBREQUINS (optimisation chute vs panneau dédié)
+  // ================================================================
+
+  const lambrequins = calculerLambrequins({
+    lambrequin_gauche: params.lambrequin_gauche,
+    lambrequin_droit: params.lambrequin_droit,
+    largeur_base_mm,
+    profondeur_mm,
+    rampant_gauche_mm,
+    rampant_droit_mm,
+    hauteur_murs_mm: params.hauteur_murs_mm,
+    laize_mm,
+    recouvrement_mm,
+  });
+
+  // Ajouter les panneaux dédiés (lambrequins non récupérables en chute) au plan
+  for (const lam of lambrequins) {
+    if (!lam.pris_en_chute && lam.panneau) {
+      panneaux.push(lam.panneau);
+    }
+  }
+
+  // ================================================================
+  // 5. CALCUL NESTING ET TOTAUX
   // ================================================================
 
   const nesting = calculerNesting(panneaux, laize_mm);
@@ -156,11 +191,18 @@ export function genererPanneaux(
   // Surface totale = somme des surfaces de tous les panneaux
   const surface_totale_m2 = panneaux.reduce((acc, p) => acc + p.surface_m2, 0);
 
+  // Œillets : compter sur tous les panneaux si config présente
+  const nb_oeillets = params.oeillets_config
+    ? compterOeilletsTotaux(panneaux, params.oeillets_config)
+    : undefined;
+
   return {
     panneaux,
     ml_total: nesting.ml_total,
     nombre_laizes: nesting.nombre_laizes,
     taux_chute_pct: nesting.taux_chute_pct,
     surface_totale_m2: Math.round(surface_totale_m2 * 100) / 100,
+    lambrequins,
+    nb_oeillets,
   };
 }

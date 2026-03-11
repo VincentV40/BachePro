@@ -10,6 +10,7 @@ import type {
 import { decouperRectangle } from '../geometry/slicing';
 import { calculerNesting } from '../geometry/nesting';
 import { mm2versM2, surfacePolygone } from '../geometry/flatten';
+import { compterOeilletsTotaux } from '../geometry/oeillets';
 
 /**
  * Trapezoidale : une bache en forme de trapeze (vue de dessus).
@@ -66,6 +67,9 @@ export function genererPanneaux(
   };
 
   const nesting = calculerNesting([panneau], laize_mm);
+  const nb_oeillets = params.oeillets_config
+    ? compterOeilletsTotaux([panneau], params.oeillets_config)
+    : undefined;
 
   return {
     panneaux: [panneau],
@@ -73,5 +77,6 @@ export function genererPanneaux(
     nombre_laizes: nesting.nombre_laizes,
     taux_chute_pct: nesting.taux_chute_pct,
     surface_totale_m2: panneau.surface_m2,
+    nb_oeillets,
   };
 }

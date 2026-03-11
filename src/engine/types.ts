@@ -69,6 +69,7 @@ export interface Panneau {
   vertices_2d: Point2D[];        // Contour du panneau déplié
   surface_m2: number;
   bandes: Bande[];
+  formule_calcul?: string;       // Décomposition du développé pour affichage atelier
 }
 
 export interface ResultatPatronage {
@@ -77,6 +78,17 @@ export interface ResultatPatronage {
   nombre_laizes: number;         // Nombre total de bandes
   taux_chute_pct: number;        // % de chute tissu
   surface_totale_m2: number;     // Surface totale couverte
+  lambrequins?: LambrequinPatronage[]; // Optimisation lambrequins (pris en chute / dédiés)
+  nb_oeillets?: number;          // Nombre total d'œillets (pour chiffrage)
+}
+
+// --- Œillets ---
+
+export interface OeilletConfig {
+  actif: boolean;
+  diametre_mm: number;           // 12, 16 ou 20 (standard)
+  espacement_mm: number;         // Espacement entre œillets (défaut: 300mm)
+  retrait_bord_mm: number;       // Distance du bord (défaut: 25mm)
 }
 
 // --- Paramètres de patronage ---
@@ -85,14 +97,29 @@ export interface OptionsPatronage {
   ourlet_mm: number;             // Ourlet par bout de bande (profondeur)
   recouvrement_mm: number;       // Chevauchement entre bandes pour soudure
   laize_mm: number;              // Largeur utile du tissu
+  marge_coupe_mm?: number;       // Marge de sécurité de coupe par extrémité (défaut: 0 si absent)
 }
 
 // --- Paramètres par typologie ---
 
 export interface LambrequinParams {
   actif: boolean;
-  longueur_mm: number;           // Longueur le long du bord
-  hauteur_mm: number;            // Retombée
+  longueur_mm: number;           // Longueur le long du bord (si 0 = profondeur_mm)
+  hauteur_mm: number;            // Retombée visible
+  ourlet_bas_mm?: number;        // Ourlet en bas (défaut 30mm)
+  ourlet_lateraux_mm?: number;   // Ourlets latéraux (défaut 30mm)
+  oeillets?: boolean;            // Œillets en bas
+  oeillets_espacement_mm?: number; // Espacement entre œillets (défaut 300mm)
+}
+
+/** Résultat de l'optimisation lambrequin (pris dans chute vs panneau dédié) */
+export interface LambrequinPatronage {
+  id: string;                    // "lambrequin-gauche" | "lambrequin-droit"
+  nom: string;
+  pris_en_chute: boolean;        // true = récupéré dans la chute du pignon
+  ml_dedie: number;              // 0 si pris_en_chute, sinon ML du panneau dédié
+  largeur_disponible: number;    // Largeur disponible dans la chute (mm)
+  panneau?: Panneau;             // Panneau dédié si !pris_en_chute
 }
 
 export interface TenteDeuxPansParams {
@@ -105,6 +132,7 @@ export interface TenteDeuxPansParams {
   lambrequin_droit: LambrequinParams;
   pignon_avant: boolean;         // Inclure le pignon avant
   pignon_arriere: boolean;       // Inclure le pignon arrière
+  oeillets_config?: OeilletConfig; // Config œillets sur le périmètre
 }
 
 export interface MonoPenteParams {
@@ -113,11 +141,13 @@ export interface MonoPenteParams {
   rampant_mm: number;            // Longueur de la pente unique
   hauteur_haute_mm: number;
   hauteur_basse_mm: number;
+  oeillets_config?: OeilletConfig;
 }
 
 export interface RectangulairePlateParams {
   largeur_mm: number;
   profondeur_mm: number;
+  oeillets_config?: OeilletConfig;
 }
 
 export interface TrapezoidaleParams {
@@ -125,32 +155,37 @@ export interface TrapezoidaleParams {
   largeur_arriere_mm: number;
   profondeur_mm: number;
   rampant_mm: number;
+  oeillets_config?: OeilletConfig;
 }
 
 export interface PagodeParams {
   largeur_mm: number;
   profondeur_mm: number;
-  hauteur_faitage_mm: number;      // Hauteur du point central
-  hauteur_bords_mm: number;        // Hauteur aux bords (retombée)
-  rampant_mm: number;              // Longueur de pente du bord au sommet
+  hauteur_faitage_mm: number;
+  hauteur_bords_mm: number;
+  rampant_mm: number;
+  oeillets_config?: OeilletConfig;
 }
 
 export interface TunnelParams {
-  largeur_mm: number;              // Diamètre / largeur au sol
-  profondeur_mm: number;           // Longueur du tunnel
-  hauteur_mm: number;              // Hauteur au sommet
-  nb_facettes: number;             // Nombre de facettes pour approx du cylindre (defaut 8)
+  largeur_mm: number;
+  profondeur_mm: number;
+  hauteur_mm: number;
+  nb_facettes: number;
+  oeillets_config?: OeilletConfig;
 }
 
 export interface LateraleDroiteParams {
   largeur_mm: number;
-  hauteur_mm: number;              // Hauteur du pan lateral
-  profondeur_mm: number;           // Profondeur (epaisseur)
+  hauteur_mm: number;
+  profondeur_mm: number;
+  oeillets_config?: OeilletConfig;
 }
 
 export interface FormeLibreParams {
-  vertices: Point2D[];             // Contour defini par l'utilisateur
-  profondeur_mm: number;           // Epaisseur / hauteur si 3D
+  vertices: Point2D[];
+  profondeur_mm: number;
+  oeillets_config?: OeilletConfig;
 }
 
 // --- Chiffrage ---
@@ -191,6 +226,13 @@ export interface Chiffrage {
   cout_revient_ht: number;
   marge_pct: number;
   prix_vente_ht: number;
+  remise_commerciale_ht: number;    // Montant total de remise (0 si aucune)
+  remises_pct?: {                   // Remises par poste pour affichage PDF
+    fourniture_pct: number;
+    confection_pct: number;
+    pose_pct: number;
+    deplacement_pct: number;
+  };
   tva_taux: number;
   prix_vente_ttc: number;
 }

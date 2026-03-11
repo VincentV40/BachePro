@@ -15,6 +15,9 @@ export default function ChiffragePage({ projetId }: Props) {
   const { tissus } = useTissusStore();
   const projet = projets.find((p) => p.id === projetId);
   const tissu = tissus.find((t) => t.id === projet?.tissu_id);
+  const oeillets_config = projet
+    ? (projet.params as { oeillets_config?: import("@/engine/types").OeilletConfig }).oeillets_config
+    : undefined;
 
   const handleChiffrageChange = useCallback(
     (chiffrage: Chiffrage) => {
@@ -39,6 +42,7 @@ export default function ChiffragePage({ projetId }: Props) {
       <CoutDeRevient
         resultat={projet.resultat}
         tissu={tissu}
+        oeillets_config={oeillets_config}
         onChiffrageChange={handleChiffrageChange}
       />
     </div>

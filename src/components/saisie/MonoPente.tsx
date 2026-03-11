@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo } from "react";
-import type { MonoPenteParams, OptionsPatronage } from "@/engine/types";
+import type { MonoPenteParams, OeilletConfig, OptionsPatronage } from "@/engine/types";
 import { genererPanneaux } from "@/engine/typologies/mono-pente";
 import { useProjetStore } from "@/stores/projet-store";
 import { useTissusStore } from "@/stores/tissus-store";
@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { OeilletConfigField } from "./OptionsCommunes";
 import { arrondirML } from "@/lib/constants";
-import { Ruler, Layers, BarChart3, Euro } from "lucide-react";
+import { Ruler, Layers, BarChart3, Euro, Circle } from "lucide-react";
 
 interface Props {
   projetId: string;
@@ -91,6 +92,23 @@ export default function MonoPente({ projetId }: Props) {
               <DimensionField label="Hauteur cote haut" value={params.hauteur_haute_mm} onChange={(v) => setParam("hauteur_haute_mm", v)} />
               <DimensionField label="Hauteur cote bas" value={params.hauteur_basse_mm} onChange={(v) => setParam("hauteur_basse_mm", v)} />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Œillets */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Circle className="w-4 h-4 text-primary" />
+              Œillets
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <OeilletConfigField
+              value={(params as { oeillets_config?: OeilletConfig }).oeillets_config}
+              onChange={(v) => updateParams(projetId, { ...params, oeillets_config: v })}
+              nbOeillets={resultat?.nb_oeillets}
+            />
           </CardContent>
         </Card>
 
